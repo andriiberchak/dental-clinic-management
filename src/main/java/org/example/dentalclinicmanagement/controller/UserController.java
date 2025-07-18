@@ -6,26 +6,20 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dentalclinicmanagement.dto.DentistProfileDto;
-import org.example.dentalclinicmanagement.dto.UserDTO;
+import org.example.dentalclinicmanagement.dto.UserDto;
 import org.example.dentalclinicmanagement.dto.request.ChangePasswordRequest;
 import org.example.dentalclinicmanagement.dto.request.UpdateUserProfileRequest;
 import org.example.dentalclinicmanagement.dto.response.MessageResponse;
 import org.example.dentalclinicmanagement.model.Role;
-import org.example.dentalclinicmanagement.model.User;
 import org.example.dentalclinicmanagement.security.service.UserDetailsImpl;
 import org.example.dentalclinicmanagement.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
-
 
 @Slf4j
 @RestController
@@ -38,19 +32,19 @@ public class UserController {
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserDTO> getCurrentUserInfo() {
+    public ResponseEntity<UserDto> getCurrentUserInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
 
         log.debug("Profile info request from user: {}", userDetails.getEmail());
 
-        UserDTO userDTO = userService.getUserByEmail(userDetails.getEmail());
+        UserDto userDTO = userService.getUserByEmail(userDetails.getEmail());
         return ResponseEntity.ok(userDTO);
     }
 
     @PatchMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserDTO> updateCurrentUserInfo(
+    public ResponseEntity<UserDto> updateCurrentUserInfo(
             @Valid @RequestBody UpdateUserProfileRequest request) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -58,7 +52,7 @@ public class UserController {
 
         log.info("User profile update request: user={}", userDetails.getEmail());
 
-        UserDTO updatedUser = userService.updateUserProfile(userDetails.getId(), request);
+        UserDto updatedUser = userService.updateUserProfile(userDetails.getId(), request);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -86,12 +80,9 @@ public class UserController {
         return ResponseEntity.ok(dentistProfileDto);
     }
 
-
-    /*************************************************************************************/
-
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<UserDTO>> getAllUsers(
+    public ResponseEntity<Page<UserDto>> getAllUsers(
             @RequestParam(name = "page", defaultValue = "0") @Min(0) int page,
             @RequestParam(name = "size", defaultValue = "10") @Min(1) int size,
             @RequestParam(name = "search", required = false) String search,
@@ -102,24 +93,32 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsersWithFilters(page, size, role, search));
     }
 
-    @PatchMapping
+    @PatchMapping("/profile/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateUser(
+    public ResponseEntity<UserDto> updateUser(
             @Valid @RequestBody UpdateUserProfileRequest request,
-            @RequestParam("userId") Long userId) {
+            @PathVariable Long id) {
 
-        log.info("Admin user update request: userId={}", userId);
+        log.info("Admin user update request: userId={}", id);
 
-        UserDTO updatedUser = userService.updateUserProfile(userId, request);
+        UserDto updatedUser = userService.updateUserProfile(id, request);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @GetMapping("/profile/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DENTIST', 'MANAGER')")
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        log.info("Getting info about user: userId={}", id);
+
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateUserRole(@PathVariable Long id, @RequestParam @NotNull Role role) {
+    public ResponseEntity<UserDto> updateUserRole(@PathVariable Long id, @RequestParam @NotNull Role role) {
         log.info("Admin role update request: userId={}, newRole={}", id, role);
 
-        UserDTO updatedUser = userService.updateUserRole(id, role);
+        UserDto updatedUser = userService.updateUserRole(id, role);
         return ResponseEntity.ok(updatedUser);
     }
 

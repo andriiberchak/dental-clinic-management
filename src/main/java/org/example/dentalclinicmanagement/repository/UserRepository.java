@@ -16,6 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByEmail(String email);
 
     int countByRole(Role role);
+
     @Query("SELECT u FROM User u WHERE " +
             "(:search IS NULL OR :search = '' OR " +
             " UPPER(u.firstName) LIKE UPPER(CONCAT('%', :search, '%')) OR " +
@@ -27,5 +28,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("search") String search,
             @Param("role") Role role,
             Pageable pageable);
+
+    Optional<User> findByPhoneNumber(String phoneNumber);
 }
  

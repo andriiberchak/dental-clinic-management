@@ -1,6 +1,6 @@
 package org.example.dentalclinicmanagement.service;
 
-import org.springframework.transaction.annotation.Transactional;
+import org.example.dentalclinicmanagement.dto.ImportReport;
 
 import java.io.IOException;
 import java.io.InputStream;

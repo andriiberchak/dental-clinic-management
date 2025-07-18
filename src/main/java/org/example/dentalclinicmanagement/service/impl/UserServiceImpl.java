@@ -3,7 +3,7 @@ package org.example.dentalclinicmanagement.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dentalclinicmanagement.dto.DentistProfileDto;
-import org.example.dentalclinicmanagement.dto.UserDTO;
+import org.example.dentalclinicmanagement.dto.UserDto;
 import org.example.dentalclinicmanagement.dto.request.ChangePasswordRequest;
 import org.example.dentalclinicmanagement.dto.request.ForgotPasswordRequest;
 import org.example.dentalclinicmanagement.dto.request.ResetPasswordRequest;
@@ -33,7 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -53,7 +52,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDTO getUserByEmail(String email) {
+    public UserDto getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -62,7 +61,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDTO getUserById(Long id) {
+    public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
@@ -71,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserDTO> getAllUsersWithFilters(int page, int size, Role role, String search) {
+    public Page<UserDto> getAllUsersWithFilters(int page, int size, Role role, String search) {
         log.debug("Getting users with search: '{}' and filters: role={}, page={}, size={}",
                 search, role, page, size);
 
@@ -83,7 +82,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO updateUserRole(Long userId, Role role) {
+    public UserDto updateUserRole(Long userId, Role role) {
         log.debug("Updating user role: userId={}, newRole={}", userId, role);
 
         User user = userRepository.findById(userId)
@@ -104,7 +103,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDTO updateUserProfile(Long userId, UpdateUserProfileRequest request) {
+    public UserDto updateUserProfile(Long userId, UpdateUserProfileRequest request) {
         log.debug("Updating user profile for id: {}", userId);
 
         User existingUser = userRepository.findById(userId)
