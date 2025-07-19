@@ -7,5 +7,6 @@ import org.example.dentalclinicmanagement.model.User;
 public interface CalendarService {
     CalendarEventDto syncAppointment(Appointment appointment);
     boolean removeAppointment(Appointment appointment);
+    boolean hasCalendarAccess(User user);
     void storeCredentials(User user, String accessToken, String refreshToken, Long expiresAt);
 }

@@ -1,9 +1,9 @@
 package org.example.dentalclinicmanagement.security;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.example.dentalclinicmanagement.security.jwt.AuthEntryPointJwt;
 import org.example.dentalclinicmanagement.security.jwt.AuthTokenFilter;
+import org.example.dentalclinicmanagement.security.oauth2.CustomOAuth2AuthorizationRequestResolver;
 import org.example.dentalclinicmanagement.security.oauth2.OAuth2AuthenticationFailureHandler;
 import org.example.dentalclinicmanagement.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import org.example.dentalclinicmanagement.security.oauth2.OAuth2UserServiceImpl;
@@ -38,6 +38,7 @@ public class SecurityConfig {
     private final OAuth2UserServiceImpl oAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private final CustomOAuth2AuthorizationRequestResolver customAuthorizationRequestResolver;
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -92,6 +93,9 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 ).oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestResolver(customAuthorizationRequestResolver) // ✅ Додаємо custom resolver
+                        )
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(oAuth2UserService)
                         )

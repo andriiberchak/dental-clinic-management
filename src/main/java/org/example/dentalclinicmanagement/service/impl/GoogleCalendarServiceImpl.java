@@ -93,7 +93,7 @@ public class GoogleCalendarServiceImpl implements CalendarService {
 
             AppointmentCalendarLink link = linkOpt.get();
             Optional<GoogleCredential> credentialOpt = credentialRepository.findByUser_Id(link.getUserId());
-            
+
             if (credentialOpt.isEmpty()) {
                 log.debug("No Google credentials found for user {}", link.getUserId());
                 linkRepository.delete(link);
@@ -119,14 +119,32 @@ public class GoogleCalendarServiceImpl implements CalendarService {
     public void storeCredentials(User user, String accessToken, String refreshToken, Long expiresAt) {
         GoogleCredential credential = credentialRepository.findByUser(user)
                 .orElse(new GoogleCredential());
-        
+
         credential.setUser(user);
         credential.setAccessToken(accessToken);
         credential.setRefreshToken(refreshToken);
         credential.setAccessTokenExpiry(Instant.ofEpochMilli(expiresAt));
-        
+
         credentialRepository.save(credential);
         log.info("Google credentials stored for user: {}", user.getEmail());
+    }
+
+    @Override
+    public boolean hasCalendarAccess(User user) {
+        try {
+            Optional<GoogleCredential> credentialOpt = credentialRepository.findByUser(user);
+            if (credentialOpt.isEmpty()) {
+                return false;
+            }
+
+            Calendar calendar = buildCalendar(credentialOpt.get());
+            calendar.events().list(CALENDAR_ID).setMaxResults(1).execute();
+            return true;
+
+        } catch (Exception ex) {
+            log.warn("Calendar access test failed for user {}: {}", user.getEmail(), ex.getMessage());
+            return false;
+        }
     }
 
     private Calendar buildCalendar(GoogleCredential credential) throws Exception {
@@ -161,7 +179,7 @@ public class GoogleCalendarServiceImpl implements CalendarService {
         linkRepository.save(link);
 
         log.info("Google event created: eventId={}", created.getId());
-        
+
         return CalendarEventDto.builder()
                 .eventId(created.getId())
                 .title(created.getSummary())
@@ -170,8 +188,8 @@ public class GoogleCalendarServiceImpl implements CalendarService {
                 .build();
     }
 
-    private CalendarEventDto updateExistingEvent(Calendar calendar, AppointmentCalendarLink link, 
-                                                Appointment appointment) throws Exception {
+    private CalendarEventDto updateExistingEvent(Calendar calendar, AppointmentCalendarLink link,
+                                                 Appointment appointment) throws Exception {
         try {
             Event existingEvent = calendar.events().get(CALENDAR_ID, link.getGoogleEventId()).execute();
             Event updatedEvent = buildEvent(appointment);
@@ -182,16 +200,16 @@ public class GoogleCalendarServiceImpl implements CalendarService {
                     .setSummary(updatedEvent.getSummary());
 
             Event updated = calendar.events().update(CALENDAR_ID, link.getGoogleEventId(), existingEvent).execute();
-            
+
             log.info("Google event updated: eventId={}", link.getGoogleEventId());
-            
+
             return CalendarEventDto.builder()
                     .eventId(updated.getId())
                     .title(updated.getSummary())
                     .description(updated.getDescription())
                     .status("updated")
                     .build();
-                    
+
         } catch (Exception ex) {
             log.warn("Failed to update existing event {}, creating new one", link.getGoogleEventId());
             linkRepository.delete(link);
@@ -229,13 +247,13 @@ public class GoogleCalendarServiceImpl implements CalendarService {
         StringBuilder description = new StringBuilder();
         description.append("Dental clinic appointment\n");
         description.append("Doctor: Dr. ").append(appointment.getDentist().getFirstName())
-                   .append(" ").append(appointment.getDentist().getLastName()).append("\n");
+                .append(" ").append(appointment.getDentist().getLastName()).append("\n");
         description.append("Duration: ").append(appointment.getDurationMinutes()).append(" minutes\n");
-        
+
         if (appointment.getComment() != null && !appointment.getComment().trim().isEmpty()) {
             description.append("Notes: ").append(appointment.getComment());
         }
-        
+
         return description.toString();
     }
 }

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface AppointmentCalendarLinkRepository extends JpaRepository<AppointmentCalendarLink, Long> {
     Optional<AppointmentCalendarLink> findByAppointmentId(Long id);
+
+    void deleteAllByUserId(Long id);
 }
