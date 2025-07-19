@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dentalclinicmanagement.dto.DentistProfileDto;
+import org.example.dentalclinicmanagement.dto.MinimalUserRegistrationDTO;
 import org.example.dentalclinicmanagement.dto.UserDto;
 import org.example.dentalclinicmanagement.dto.request.ChangePasswordRequest;
 import org.example.dentalclinicmanagement.dto.request.UpdateUserProfileRequest;
@@ -134,5 +135,12 @@ public class UserController {
         log.debug("Password change request details: userId={}, request={}", userDetails.getId(), request);
         MessageResponse response = userService.changePassword(userDetails.getId(), request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ResponseEntity<UserDto> registerMinimalUser(@Valid @RequestBody MinimalUserRegistrationDTO dto) {
+        UserDto registeredUser = userService.registerMinimalUser(dto);
+        return ResponseEntity.ok(registeredUser);
     }
 }

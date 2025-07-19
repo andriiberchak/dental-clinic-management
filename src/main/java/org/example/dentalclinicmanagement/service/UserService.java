@@ -1,6 +1,7 @@
 package org.example.dentalclinicmanagement.service;
 
 import org.example.dentalclinicmanagement.dto.DentistProfileDto;
+import org.example.dentalclinicmanagement.dto.MinimalUserRegistrationDTO;
 import org.example.dentalclinicmanagement.dto.UserDto;
 import org.example.dentalclinicmanagement.dto.request.ChangePasswordRequest;
 import org.example.dentalclinicmanagement.dto.request.ForgotPasswordRequest;
@@ -31,5 +32,7 @@ public interface UserService {
     MessageResponse updatePriorityDentist(Long userId, Long dentistId);
 
     DentistProfileDto getPriorityDentistProfile(Long userId);
+
+    UserDto registerMinimalUser(MinimalUserRegistrationDTO dto);
 
 }

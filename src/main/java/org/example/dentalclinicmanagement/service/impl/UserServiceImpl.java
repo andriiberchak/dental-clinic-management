@@ -3,6 +3,7 @@ package org.example.dentalclinicmanagement.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dentalclinicmanagement.dto.DentistProfileDto;
+import org.example.dentalclinicmanagement.dto.MinimalUserRegistrationDTO;
 import org.example.dentalclinicmanagement.dto.UserDto;
 import org.example.dentalclinicmanagement.dto.request.ChangePasswordRequest;
 import org.example.dentalclinicmanagement.dto.request.ForgotPasswordRequest;
@@ -229,11 +230,29 @@ public class UserServiceImpl implements UserService {
 
         return DentistProfileDto.builder()
                 .dentistId(priorityDentist.getId())
-               .description(profile.getDescription())
+                .description(profile.getDescription())
                 .experience(profile.getYearsOfExperience())
                 .firstName(priorityDentist.getFirstName())
                 .lastName(priorityDentist.getLastName())
                 .photoUrl(profile.getPhotoUrl())
                 .build();
+    }
+
+    @Override
+    public UserDto registerMinimalUser(MinimalUserRegistrationDTO dto) {
+        if (userRepository.existsByPhoneNumber(dto.getPhone())) {
+            throw new RuntimeException("User already exist!");
+        }
+
+        User user = new User();
+        user.setPhoneNumber(dto.getPhone());
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setEmail(dto.getPhone() + "@phone.com");
+
+        user.setPassword(passwordEncoder.encode("defaultPassword"));
+        user.setRole(Role.USER);
+
+        return userMapper.toUserDTO(userRepository.save(user));
     }
 }
