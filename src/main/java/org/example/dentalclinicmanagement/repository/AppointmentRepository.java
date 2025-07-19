@@ -1,0 +1,40 @@
+package org.example.dentalclinicmanagement.repository;
+
+import org.example.dentalclinicmanagement.model.Appointment;
+import org.example.dentalclinicmanagement.model.AppointmentStatus;
+import org.example.dentalclinicmanagement.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+
+    // Повернути всі слоти стоматолога з певним статусом
+    List<Appointment> findByDentistAndStatus(User dentist, AppointmentStatus status);
+
+    // Повернути всі записи (слоти) стоматолога
+    List<Appointment> findByDentist(User dentist);
+
+    List<Appointment> findByDentistAndAppointmentTimeBetween(User user, LocalDateTime start, LocalDateTime end);
+
+    Optional<Appointment> findByDentistAndAppointmentTime(User dentist, LocalDateTime appointmentTime);
+
+    List<Appointment> findByClient(User user);
+
+    List<Appointment> findByStatusAndReminderSentFalse(AppointmentStatus status);
+    List<Appointment> findByClientAndAppointmentTimeBetween(User client, LocalDateTime start, LocalDateTime end);
+
+    long countByClientAndStatusAndAppointmentTimeBetween(
+            User client,
+            AppointmentStatus status,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+    long countByClientAndCreatedAtBetween(User client,
+                                          LocalDateTime start,
+                                          LocalDateTime end);
+}
