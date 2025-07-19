@@ -9,9 +9,12 @@ import org.example.dentalclinicmanagement.model.User;
 import org.example.dentalclinicmanagement.repository.UserRepository;
 import org.example.dentalclinicmanagement.security.jwt.JwtUtils;
 import org.example.dentalclinicmanagement.security.service.UserDetailsImpl;
+import org.example.dentalclinicmanagement.service.CalendarService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -29,6 +32,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
+    private final CalendarService calendarService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -105,6 +110,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 log.info("OAuth2 user data updated: {} (ID: {})", user.getEmail(), user.getId());
             }
 
+            storeCalendarCredentials(authentication, user);
+
             userDetails = UserDetailsImpl.build(user, oAuth2User.getAttributes());
             log.info("OAuth2 user processed: {} (ID: {})", user.getEmail(), user.getId());
 
@@ -125,6 +132,30 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         } catch (Exception e) {
             log.error("Error generating tokens for user: {}", userDetails.getEmail(), e);
             throw new RuntimeException("Failed to generate authentication tokens", e);
+        }
+    }
+
+    private void storeCalendarCredentials(Authentication authentication, User user) {
+        try {
+            OAuth2AuthorizedClient authorizedClient = authorizedClientService
+                    .loadAuthorizedClient("google", authentication.getName());
+
+            if (authorizedClient != null && authorizedClient.getAccessToken() != null) {
+                String accessToken = authorizedClient.getAccessToken().getTokenValue();
+                String refreshToken = authorizedClient.getRefreshToken() != null ?
+                        authorizedClient.getRefreshToken().getTokenValue() : null;
+                Long expiresAt = authorizedClient.getAccessToken().getExpiresAt() != null ?
+                        authorizedClient.getAccessToken().getExpiresAt().toEpochMilli() : null;
+
+                if (refreshToken != null && expiresAt != null) {
+                    calendarService.storeCredentials(user, accessToken, refreshToken, expiresAt);
+                    log.info("Google Calendar credentials stored for user: {}", user.getEmail());
+                } else {
+                    log.warn("Missing refresh token or expiration for user: {}", user.getEmail());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to store calendar credentials for user {}: {}", user.getEmail(), ex.getMessage());
         }
     }
 }

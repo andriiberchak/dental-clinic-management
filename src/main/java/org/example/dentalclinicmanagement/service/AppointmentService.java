@@ -1,42 +1,25 @@
 package org.example.dentalclinicmanagement.service;
 
-
 import org.example.dentalclinicmanagement.dto.*;
-import org.example.dentalclinicmanagement.model.Appointment;
-import org.example.dentalclinicmanagement.model.AppointmentStatus;
-import org.example.dentalclinicmanagement.model.User;
+import org.example.dentalclinicmanagement.dto.request.BookSlotRequest;
+import org.example.dentalclinicmanagement.dto.request.CreateSlotRequest;
+import org.example.dentalclinicmanagement.dto.request.UpdateAppointmentRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AppointmentService {
-
-    Appointment createAppointmentSlot(Long dentistId, LocalDateTime appointmentTime, AppointmentStatus status, Integer durationMinutes);
-
-
-    Appointment cancelAppointment(Long appointmentId);
-
+    AppointmentDto createAppointmentSlot(Long dentistId, CreateSlotRequest request);
+    AppointmentDto bookSlot(BookSlotRequest request, String userEmail);
+    void cancelAppointment(Long appointmentId, String userEmail);
+    AppointmentDto updateAppointment(Long appointmentId, UpdateAppointmentRequest request, String userEmail);
+    void updateAppointmentComment(Long appointmentId, String comment, String userEmail);
     List<TimeSlotDto> getWeeklyCalendar(Long dentistId, LocalDate weekStart);
-
-    Appointment bookSlot(Long dentistId, LocalDateTime appointmentTime, Long clientId, Integer durationMinutes, String comment);
-
-    Appointment updateAppointment(Long appointmentId, LocalDateTime newAppointmentTime);
-
-    UserAppointmentsDto getUserAppointmentsByTimeCategories(UserDto user);
-
-    Appointment updateAppointmentComment(Long appointmentId, String comment);
-
-    DentistStatisticsDto getDentistStatistics(Long dentistId,
-                                              String period,
-                                              LocalDate frameStart);
-
-    List<NextFreeSlotDto> getNextFreeSlotsForAllDentists(int requiredMinutes);
-
-    List<NextFreeSlotDto> getNextFreeSlots(int requiredMinutes);
-
-    List<Appointment> getPatientAppointmentHistory(Long patientId, int page, int size);
-
+    List<TimeSlotDto> getPublicWeeklyCalendar(Long dentistId, LocalDate weekStart, String userEmail);
+    UserAppointmentsDto getUserAppointmentsByTimeCategories(String userEmail);
+    List<AppointmentDto> getPatientAppointmentHistory(Long patientId, Pageable pageable);
     long getPatientAppointmentCount(Long patientId);
-
+    DentistStatisticsDto getDentistStatistics(Long dentistId, String period, LocalDate frameStart);
+    List<NextFreeSlotDto> getNextFreeSlots(int requiredMinutes);
 }

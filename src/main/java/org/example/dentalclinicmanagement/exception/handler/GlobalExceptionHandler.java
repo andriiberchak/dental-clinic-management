@@ -5,10 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.example.dentalclinicmanagement.dto.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dentalclinicmanagement.dto.response.ValidationErrorResponse;
-import org.example.dentalclinicmanagement.exception.EmailAlreadyExistsException;
-import org.example.dentalclinicmanagement.exception.PasswordUpdateException;
-import org.example.dentalclinicmanagement.exception.ResetPasswordException;
-import org.example.dentalclinicmanagement.exception.UserNotFoundException;
+import org.example.dentalclinicmanagement.exception.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -290,6 +287,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
+    @ExceptionHandler(AppointmentException.class)
+    public ResponseEntity<ErrorResponse> handleAppointmentException(AppointmentException ex) {
+        logBusinessError("Appointment operation failed: " + ex.getMessage(), ex);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(

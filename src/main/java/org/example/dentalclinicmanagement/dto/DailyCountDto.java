@@ -1,7 +1,15 @@
 package org.example.dentalclinicmanagement.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
-public record DailyCountDto(LocalDate date, long count) {}
-
-// src/main/java/com/secure/notes/dtos/HourlyCountDto.java
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class DailyCountDto {
+    private LocalDate date;
+    private Long count;
+}

@@ -1,3 +1,13 @@
 package org.example.dentalclinicmanagement.dto;
 
-public record HourlyCountDto(int hour, long count) {}
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class HourlyCountDto {
+    private Integer hour;
+    private Long count;
+}

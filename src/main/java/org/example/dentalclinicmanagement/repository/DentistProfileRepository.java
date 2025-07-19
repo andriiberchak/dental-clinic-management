@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -20,8 +19,5 @@ public interface DentistProfileRepository extends JpaRepository<DentistProfile, 
 
     @Query("SELECT dp FROM DentistProfile dp WHERE dp.dentist.role = :role")
     Page<DentistProfile> findAllByDentistRole(@Param("role") Role role, Pageable pageable);
-
-    @Transactional
-    void deleteDentistProfileByDentist(User user);
 
 }

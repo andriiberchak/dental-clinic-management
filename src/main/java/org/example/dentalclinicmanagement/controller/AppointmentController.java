@@ -1,143 +1,181 @@
 package org.example.dentalclinicmanagement.controller;
 
-import lombok.AllArgsConstructor;
-import org.example.dentalclinicmanagement.dto.TimeSlotDto;
-import org.example.dentalclinicmanagement.dto.UserAppointmentsDto;
-import org.example.dentalclinicmanagement.dto.UserDto;
-import org.example.dentalclinicmanagement.model.Appointment;
-import org.example.dentalclinicmanagement.model.AppointmentStatus;
-import org.example.dentalclinicmanagement.model.User;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.example.dentalclinicmanagement.dto.*;
+import org.example.dentalclinicmanagement.dto.request.BookSlotRequest;
+import org.example.dentalclinicmanagement.dto.request.CreateSlotRequest;
+import org.example.dentalclinicmanagement.dto.request.UpdateAppointmentRequest;
+import org.example.dentalclinicmanagement.dto.response.MessageResponse;
 import org.example.dentalclinicmanagement.service.AppointmentService;
-import org.example.dentalclinicmanagement.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Slf4j
+@Validated
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
-    private final UserService userService;
 
     @PostMapping("/{appointmentId}/cancel")
-    public ResponseEntity<?> cancelAppointment(@PathVariable Long appointmentId) {
-        Appointment appt = appointmentService.cancelAppointment(appointmentId);
-        return ResponseEntity.ok(appt);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponse> cancelAppointment(
+            @PathVariable @NotNull Long appointmentId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("Cancel appointment request: appointmentId={}, user={}", appointmentId, userDetails.getUsername());
+
+        appointmentService.cancelAppointment(appointmentId, userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Appointment cancelled successfully"));
     }
 
     @GetMapping("/calendar/{dentistId}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_MANAGER','ROLE_DENTIST')")
-    public ResponseEntity<?> getWeeklyCalendar(@PathVariable Long dentistId,
-                                               @RequestParam String weekStart) {
-        List<TimeSlotDto> slots = appointmentService
-                .getWeeklyCalendar(dentistId, LocalDate.parse(weekStart));
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','DENTIST')")
+    public ResponseEntity<List<TimeSlotDto>> getWeeklyCalendar(
+            @PathVariable @NotNull Long dentistId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart) {
+
+        log.debug("Weekly calendar request: dentistId={}, weekStart={}", dentistId, weekStart);
+
+        List<TimeSlotDto> slots = appointmentService.getWeeklyCalendar(dentistId, weekStart);
         return ResponseEntity.ok(slots);
     }
 
     @PostMapping("/book-slot")
-    public ResponseEntity<?> bookSlot(@RequestParam Long dentistId,
-                                      @RequestParam String slotTime,
-                                      @RequestParam Long clientId,
-                                      @RequestParam Integer durationMinutes,
-                                      @RequestParam(required = false) String comment) {
-        Appointment appt = appointmentService.bookSlot(
-                dentistId,
-                LocalDateTime.parse(slotTime),
-                clientId,
-                durationMinutes,
-                comment
-        );
-        return ResponseEntity.ok(appt);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AppointmentDto> bookSlot(
+            @Valid @RequestBody BookSlotRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("Book slot request: {}, user={}", request, userDetails.getUsername());
+
+        AppointmentDto appointment = appointmentService.bookSlot(request, userDetails.getUsername());
+        return ResponseEntity.ok(appointment);
     }
 
     @PostMapping("/{dentistId}/create-slot")
-    public ResponseEntity<?> createAppointmentSlot(@PathVariable Long dentistId,
-                                                   @RequestParam String appointmentTime,
-                                                   @RequestParam(required = false) String status,
-                                                   @RequestParam Integer durationMinutes) {
-        Appointment appt = appointmentService.createAppointmentSlot(
-                dentistId,
-                LocalDateTime.parse(appointmentTime),
-                status != null
-                        ? AppointmentStatus.valueOf(status.toUpperCase())
-                        : AppointmentStatus.AVAILABLE,
-                durationMinutes
-        );
-        return ResponseEntity.ok(appt);
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','DENTIST')")
+    public ResponseEntity<AppointmentDto> createAppointmentSlot(
+            @PathVariable @NotNull Long dentistId,
+            @Valid @RequestBody CreateSlotRequest request) {
+
+        log.info("Create slot request: dentistId={}, request={}", dentistId, request);
+
+        AppointmentDto appointment = appointmentService.createAppointmentSlot(dentistId, request);
+        return ResponseEntity.ok(appointment);
     }
 
-    @PostMapping("/{appointmentId}/update")
-    public ResponseEntity<?> updateAppointment(@PathVariable Long appointmentId,
-                                               @RequestParam String newTime) {
-        Appointment appt = appointmentService.updateAppointment(
-                appointmentId,
-                LocalDateTime.parse(newTime)
-        );
-        return ResponseEntity.ok(appt);
+    @PutMapping("/{appointmentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AppointmentDto> updateAppointment(
+            @PathVariable @NotNull Long appointmentId,
+            @Valid @RequestBody UpdateAppointmentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("Update appointment request: appointmentId={}, newTime={}, user={}",
+                appointmentId, request.getNewTime(), userDetails.getUsername());
+
+        AppointmentDto appointment = appointmentService.updateAppointment(appointmentId, request, userDetails.getUsername());
+        return ResponseEntity.ok(appointment);
     }
 
     @GetMapping("/my")
-    public ResponseEntity<?> getUserAppointments(@AuthenticationPrincipal UserDetails userDetails) {
-        UserDto user = userService.getUserByEmail(userDetails.getUsername());
-        UserAppointmentsDto dto = appointmentService.getUserAppointmentsByTimeCategories(user);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserAppointmentsDto> getUserAppointments(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("User appointments request: user={}", userDetails.getUsername());
+
+        UserAppointmentsDto dto = appointmentService.getUserAppointmentsByTimeCategories(userDetails.getUsername());
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/public/calendar/{dentistId}")
-    public ResponseEntity<?> getPublicWeeklyCalendar(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long dentistId,
-            @RequestParam String weekStart
-    ) {
-        List<TimeSlotDto> slots = appointmentService
-                .getWeeklyCalendar(dentistId, LocalDate.parse(weekStart));
-        UserDto user = userService.getUserByEmail(userDetails.getUsername());
-//        System.out.println(userDetails);
-//        System.out.println("User ID: " + user.getUserId());
-        slots.forEach(System.out::println);
-        slots.forEach(slot -> {
-            if (slot.getStatus() == AppointmentStatus.BOOKED
-                    && !slot.getClientId().equals(user.getId())) {
-                slot.setStatus(AppointmentStatus.BLOCKED);
-                slot.setClientId(null);
-                slot.setClientName(null);
-                slot.setFirstName(null);
-                slot.setLastName(null);
-                slot.setComment(null);
-            }
-        });
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<TimeSlotDto>> getPublicWeeklyCalendar(
+            @PathVariable @NotNull Long dentistId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.debug("Public calendar request: dentistId={}, weekStart={}, user={}",
+                dentistId, weekStart, userDetails.getUsername());
+
+        List<TimeSlotDto> slots = appointmentService.getPublicWeeklyCalendar(dentistId, weekStart, userDetails.getUsername());
         return ResponseEntity.ok(slots);
     }
 
-    @PutMapping("/{appointmentId}/comment")
-    public ResponseEntity<?> updateAppointmentComment(@PathVariable Long appointmentId,
-                                                      @RequestParam(required = false) String comment) {
-        Appointment updated = appointmentService.updateAppointmentComment(appointmentId, comment);
-        return ResponseEntity.ok(updated);
+    @PatchMapping("/{appointmentId}/comment")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponse> updateAppointmentComment(
+            @PathVariable @NotNull Long appointmentId,
+            @RequestParam(required = false) String comment,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("Update comment request: appointmentId={}, user={}", appointmentId, userDetails.getUsername());
+
+        appointmentService.updateAppointmentComment(appointmentId, comment, userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Comment updated successfully"));
     }
 
     @GetMapping("/patient-history/{patientId}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_MANAGER','ROLE_DENTIST')")
-    public ResponseEntity<?> getPatientHistory(@PathVariable Long patientId,
-                                               @RequestParam(defaultValue = "0") int page,
-                                               @RequestParam(defaultValue = "20") int size) {
-        List<Appointment> history = appointmentService.getPatientAppointmentHistory(patientId, page, size);
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','DENTIST')")
+    public ResponseEntity<List<AppointmentDto>> getPatientHistory(
+            @PathVariable @NotNull Long patientId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+
+        log.debug("Patient history request: patientId={}, page={}, size={}", patientId, page, size);
+
+        Pageable pageable = PageRequest.of(page, size);
+        List<AppointmentDto> history = appointmentService.getPatientAppointmentHistory(patientId, pageable);
         return ResponseEntity.ok(history);
     }
 
     @GetMapping("/patient-history/{patientId}/count")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_MANAGER','ROLE_DENTIST')")
-    public ResponseEntity<?> getPatientHistoryCount(@PathVariable Long patientId) {
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','DENTIST')")
+    public ResponseEntity<Long> getPatientHistoryCount(@PathVariable @NotNull Long patientId) {
+        log.debug("Patient history count request: patientId={}", patientId);
+
         long count = appointmentService.getPatientAppointmentCount(patientId);
         return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/statistics/{dentistId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','DENTIST')")
+    public ResponseEntity<DentistStatisticsDto> getDentistStatistics(
+            @PathVariable @NotNull Long dentistId,
+            @RequestParam(defaultValue = "week") String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate frameStart) {
+
+        log.debug("Statistics request: dentistId={}, period={}, frameStart={}",
+                dentistId, period, frameStart);
+
+        DentistStatisticsDto statistics = appointmentService.getDentistStatistics(dentistId, period, frameStart);
+        return ResponseEntity.ok(statistics);
+    }
+
+    @GetMapping("/next-free-slots")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<NextFreeSlotDto>> getNextFreeSlots(
+            @RequestParam(defaultValue = "30") @Min(1) int requiredMinutes) {
+
+        log.debug("Next free slots request: requiredMinutes={}", requiredMinutes);
+
+        List<NextFreeSlotDto> slots = appointmentService.getNextFreeSlots(requiredMinutes);
+        return ResponseEntity.ok(slots);
     }
 }

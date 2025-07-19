@@ -13,20 +13,11 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    // Повернути всі слоти стоматолога з певним статусом
-    List<Appointment> findByDentistAndStatus(User dentist, AppointmentStatus status);
-
-    // Повернути всі записи (слоти) стоматолога
-    List<Appointment> findByDentist(User dentist);
-
     List<Appointment> findByDentistAndAppointmentTimeBetween(User user, LocalDateTime start, LocalDateTime end);
 
     Optional<Appointment> findByDentistAndAppointmentTime(User dentist, LocalDateTime appointmentTime);
 
     List<Appointment> findByClient(User user);
-
-    List<Appointment> findByStatusAndReminderSentFalse(AppointmentStatus status);
-    List<Appointment> findByClientAndAppointmentTimeBetween(User client, LocalDateTime start, LocalDateTime end);
 
     long countByClientAndStatusAndAppointmentTimeBetween(
             User client,
@@ -34,6 +25,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             LocalDateTime start,
             LocalDateTime end
     );
+
     long countByClientAndCreatedAtBetween(User client,
                                           LocalDateTime start,
                                           LocalDateTime end);
