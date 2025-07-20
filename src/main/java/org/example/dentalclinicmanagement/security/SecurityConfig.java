@@ -84,17 +84,16 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/api/dentist-profile/all").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/admin/getusers").hasAnyRole("ADMIN", "MANAGER", "DENTIST")
-                        .requestMatchers("/api/admin/user/**").hasAnyRole("ADMIN", "MANAGER", "DENTIST")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/dentist-profile/all").permitAll()
+                        .requestMatchers("/api/dentist-profile/{dentistId}").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
                 ).oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization
-                                .authorizationRequestResolver(customAuthorizationRequestResolver) // ✅ Додаємо custom resolver
+                                .authorizationRequestResolver(customAuthorizationRequestResolver)
                         )
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(oAuth2UserService)

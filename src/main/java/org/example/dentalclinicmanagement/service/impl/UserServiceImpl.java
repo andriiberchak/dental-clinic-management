@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -83,6 +84,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDto updateUserRole(Long userId, Role role) {
         log.debug("Updating user role: userId={}, newRole={}", userId, role);
 
@@ -90,12 +92,33 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
         Role oldRole = user.getRole();
+
         int totalAdmins = userRepository.countByRole(Role.ADMIN);
-        if (oldRole.equals(Role.ADMIN) && totalAdmins <= 1) {
-            throw new IllegalArgumentException("Cannot change role of an admin user");
+        if (oldRole.equals(Role.ADMIN) && totalAdmins <= 1 && !role.equals(Role.ADMIN)) {
+            throw new IllegalArgumentException("Cannot change role of the last admin user");
         }
+
+        if (oldRole.equals(Role.DENTIST) && !role.equals(Role.DENTIST)) {
+
+            log.info("Removing dentist profile for user: userId={}", userId);
+            dentistProfileRepository.deleteDentistProfileByDentist(user);
+        }
+
         user.setRole(role);
         User updatedUser = userRepository.save(user);
+
+        if (role.equals(Role.DENTIST)) {
+            Optional<DentistProfile> profileOptional = dentistProfileRepository.findByDentist(user);
+            if (profileOptional.isEmpty()) {
+                log.info("Creating dentist profile for user: userId={}", userId);
+
+                DentistProfile profile = new DentistProfile();
+                profile.setDentist(user);
+                profile.setDescription("Default description");
+                profile.setYearsOfExperience(0);
+                dentistProfileRepository.save(profile);
+            }
+        }
 
         log.info("User role updated: userId={}, role={}->{}", userId, oldRole, role);
         return userMapper.toUserDTO(updatedUser);

@@ -20,4 +20,5 @@ public interface DentistProfileRepository extends JpaRepository<DentistProfile, 
     @Query("SELECT dp FROM DentistProfile dp WHERE dp.dentist.role = :role")
     Page<DentistProfile> findAllByDentistRole(@Param("role") Role role, Pageable pageable);
 
+    void deleteDentistProfileByDentist(User user);
 }
