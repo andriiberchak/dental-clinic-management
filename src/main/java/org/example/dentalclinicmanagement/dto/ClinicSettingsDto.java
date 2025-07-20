@@ -1,10 +1,10 @@
 package org.example.dentalclinicmanagement.dto;
 
 public record ClinicSettingsDto(
-        Integer dailyBookingLimit,
         Integer booking24hLimit,
+        Integer dailyBookingLimit,
+        Integer dailyChangeLimit,
         Integer hourlyOverlapLimit,
-        Integer modificationWindowHours,
-        Integer dailyChangeLimit
+        Integer modificationWindowHours
 ) {
 }

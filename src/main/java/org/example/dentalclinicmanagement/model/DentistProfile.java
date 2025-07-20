@@ -21,7 +21,7 @@ public class DentistProfile {
     @Column(length = 500)
     private String description;
 
-    private int yearsOfExperience;
+    private Integer yearsOfExperience;
 
     private String photoUrl;
 }
