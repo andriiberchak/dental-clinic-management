@@ -10,10 +10,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class LoginRequest {
-    @NotBlank(message = "{email.blank}")
-    @Email
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "{password.blank}")
+    @NotBlank(message = "Password cannot be blank")
     private String password;
 }

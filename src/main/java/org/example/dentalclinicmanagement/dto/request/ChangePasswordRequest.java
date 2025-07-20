@@ -5,12 +5,12 @@ import lombok.Data;
 
 @Data
 public class ChangePasswordRequest {
-    @NotBlank(message = "{update.current.password.required}")
+    @NotBlank(message = "Current password is required")
     private String currentPassword;
 
-    @NotBlank(message = "{update.new.password.required}")
+    @NotBlank(message = "New password is required")
     private String newPassword;
 
-    @NotBlank(message = "{update.confirm.password.required}")
+    @NotBlank(message = "Confirm password is required")
     private String confirmPassword;
 }

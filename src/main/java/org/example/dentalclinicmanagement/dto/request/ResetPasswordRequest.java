@@ -5,9 +5,9 @@ import lombok.Data;
 
 @Data
 public class ResetPasswordRequest {
-    @NotNull(message = "{reset.token.required}")
+    @NotNull(message = "Reset token is required")
     private String token;
 
-    @NotNull(message = "{reset.password.new.required}")
+    @NotNull(message = "New password is required")
     private String newPassword;
 }

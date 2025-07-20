@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Handles OAuth2 authentication success for both regular login and calendar linking
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
